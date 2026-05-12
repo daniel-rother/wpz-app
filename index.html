@@ -22,217 +22,148 @@ const VOLUNTEER_PASSWORD = "wpz2024";
 const ADMIN_PASSWORD = "zookeeper1";
 const WPZ_GREEN="#2d6a2d", WPZ_GOLD="#f5a623";
 
-// Official WPZ zone names from the 2026 map
-// Layout (N=top, W=left): 
-//   NW: Living Northwest Trail | NE: Temperate Forest / Forest Trailhead
-//   W-center: Tropical Rain Forest | Center: Australasia
-//   SW: Tropical Asia (Trail of Vines / Banyan Wilds / Assam Rhino Reserve)
-//   SE: African Savanna
-//   S-center: Bug World / Humboldt Penguin
-//   Far S: South Entrance area
+// Real GPS bounding boxes for each zone, derived from WPZ's known layout.
+// Zoo bounds: lat 47.6658–47.6720, lng -122.3545–-122.3467
+// Zones are mapped proportionally based on the official map layout.
+const ZOO_BOUNDS = {
+  latMin: 47.6658, latMax: 47.6720,
+  lngMin: -122.3545, lngMax: -122.3467
+};
 
-const ZONES=[
-  "African Savanna",
-  "Tropical Rain Forest",
-  "Tropical Asia",
-  "Living Northwest Trail",
-  "Temperate Forest",
-  "Humboldt Penguin",
-  "Australasia",
-  "Forest Trailhead",
+// Each zone has a GPS bounding box [latMin, latMax, lngMin, lngMax]
+// Based on WPZ official map layout proportions
+const ZONE_GPS = {
+  "Living Northwest Trail":   [47.6695, 47.6720, -122.3545, -122.3506],
+  "Temperate Forest":         [47.6695, 47.6720, -122.3506, -122.3467],
+  "Tropical Rainforest":      [47.6676, 47.6695, -122.3525, -122.3496],
+  "African Savanna":          [47.6676, 47.6695, -122.3496, -122.3467],
+  "Tropical Asia":            [47.6658, 47.6676, -122.3545, -122.3516],
+  "Australasia":              [47.6658, 47.6676, -122.3516, -122.3487],
+  "Trail of Adaptations":     [47.6658, 47.6676, -122.3487, -122.3467],
+  "Humboldt Penguin Exhibit": [47.6645, 47.6658, -122.3545, -122.3516],
+};
+
+const ZONES=["African Savanna","Tropical Rainforest","Tropical Asia","Living Northwest Trail","Temperate Forest","Humboldt Penguin Exhibit","Trail of Adaptations","Australasia"];
+const ZONE_EMOJI={"African Savanna":"🌍","Tropical Rainforest":"🌿","Tropical Asia":"🐘","Living Northwest Trail":"🐺","Temperate Forest":"🌲","Humboldt Penguin Exhibit":"🐧","Trail of Adaptations":"🦎","Australasia":"🦘"};
+const ZONE_PATHS=[
+  {id:"African Savanna",        color:"#d4a843",d:"M 0.62,0.22 L 0.95,0.22 L 0.95,0.60 L 0.62,0.60 Z"},
+  {id:"Tropical Rainforest",    color:"#2d7a2d",d:"M 0.30,0.22 L 0.62,0.22 L 0.62,0.52 L 0.30,0.52 Z"},
+  {id:"Tropical Asia",          color:"#7b4f1e",d:"M 0.05,0.38 L 0.30,0.38 L 0.30,0.75 L 0.05,0.75 Z"},
+  {id:"Living Northwest Trail", color:"#4a8f4a",d:"M 0.05,0.05 L 0.50,0.05 L 0.50,0.22 L 0.05,0.22 Z"},
+  {id:"Temperate Forest",       color:"#558b2f",d:"M 0.50,0.05 L 0.95,0.05 L 0.95,0.22 L 0.62,0.22 L 0.62,0.35 L 0.50,0.35 L 0.50,0.22 Z"},
+  {id:"Humboldt Penguin Exhibit",color:"#1565c0",d:"M 0.05,0.75 L 0.30,0.75 L 0.30,0.95 L 0.05,0.95 Z"},
+  {id:"Trail of Adaptations",   color:"#6a1f6a",d:"M 0.62,0.60 L 0.95,0.60 L 0.95,0.95 L 0.30,0.95 L 0.30,0.75 L 0.62,0.75 Z"},
+  {id:"Australasia",            color:"#bf5e00",d:"M 0.30,0.52 L 0.62,0.52 L 0.62,0.75 L 0.30,0.75 Z"},
+];
+const ZONE_LABELS=[
+  {id:"African Savanna",x:0.785,y:0.41},{id:"Tropical Rainforest",x:0.46,y:0.37},
+  {id:"Tropical Asia",x:0.175,y:0.565},{id:"Living Northwest Trail",x:0.275,y:0.135},
+  {id:"Temperate Forest",x:0.72,y:0.135},{id:"Humboldt Penguin Exhibit",x:0.175,y:0.85},
+  {id:"Trail of Adaptations",x:0.63,y:0.80},{id:"Australasia",x:0.46,y:0.635},
 ];
 
-const ZONE_EMOJI={
-  "African Savanna":"🌍",
-  "Tropical Rain Forest":"🌿",
-  "Tropical Asia":"🐘",
-  "Living Northwest Trail":"🐺",
-  "Temperate Forest":"🌲",
-  "Humboldt Penguin":"🐧",
-  "Australasia":"🦘",
-  "Forest Trailhead":"🌳",
-};
-
-// GPS bounding boxes per official map layout
-// Zoo: ~47.6655–47.6722, ~-122.3548–-122.3462
-const ZOO_BOUNDS={latMin:47.6655,latMax:47.6722,lngMin:-122.3548,lngMax:-122.3462};
-const ZONE_GPS={
-  "Living Northwest Trail":  [47.6698,47.6722,-122.3548,-122.3510],
-  "Temperate Forest":        [47.6698,47.6722,-122.3510,-122.3462],
-  "Forest Trailhead":        [47.6685,47.6698,-122.3548,-122.3510],
-  "Tropical Rain Forest":    [47.6672,47.6698,-122.3530,-122.3495],
-  "Australasia":             [47.6672,47.6698,-122.3495,-122.3462],
-  "Tropical Asia":           [47.6655,47.6672,-122.3548,-122.3505],
-  "African Savanna":         [47.6655,47.6672,-122.3505,-122.3462],
-  "Humboldt Penguin":        [47.6645,47.6655,-122.3530,-122.3495],
-};
-
-function gpsToSvg(lat,lng){
-  const x=(lng-ZOO_BOUNDS.lngMin)/(ZOO_BOUNDS.lngMax-ZOO_BOUNDS.lngMin);
-  const y=1-(lat-ZOO_BOUNDS.latMin)/(ZOO_BOUNDS.latMax-ZOO_BOUNDS.latMin);
-  return{x:Math.max(0.02,Math.min(0.98,x)),y:Math.max(0.02,Math.min(0.98,y))};
+// Convert real GPS to SVG 0-1 coordinates
+function gpsToSvg(lat, lng) {
+  const x = (lng - ZOO_BOUNDS.lngMin) / (ZOO_BOUNDS.lngMax - ZOO_BOUNDS.lngMin);
+  // lat is inverted: higher lat = top of map (lower y)
+  const y = 1 - (lat - ZOO_BOUNDS.latMin) / (ZOO_BOUNDS.latMax - ZOO_BOUNDS.latMin);
+  return { x: Math.max(0.02, Math.min(0.98, x)), y: Math.max(0.02, Math.min(0.98, y)) };
 }
-function gpsToZone(lat,lng){
-  for(const[zone,[latMin,latMax,lngMin,lngMax]]of Object.entries(ZONE_GPS)){
-    if(lat>=latMin&&lat<=latMax&&lng>=lngMin&&lng<=lngMax)return zone;
+
+// Find which zone a GPS coordinate falls in
+function gpsToZone(lat, lng) {
+  for (const [zone, [latMin, latMax, lngMin, lngMax]] of Object.entries(ZONE_GPS)) {
+    if (lat >= latMin && lat <= latMax && lng >= lngMin && lng <= lngMax) return zone;
   }
-  let closest=null,minDist=Infinity;
-  for(const[zone,[latMin,latMax,lngMin,lngMax]]of Object.entries(ZONE_GPS)){
-    const d=Math.hypot(lat-(latMin+latMax)/2,lng-(lngMin+lngMax)/2);
-    if(d<minDist){minDist=d;closest=zone;}
+  // If not in any zone exactly, find the closest one
+  let closest = null, minDist = Infinity;
+  for (const [zone, [latMin, latMax, lngMin, lngMax]] of Object.entries(ZONE_GPS)) {
+    const centerLat = (latMin + latMax) / 2;
+    const centerLng = (lngMin + lngMax) / 2;
+    const dist = Math.hypot(lat - centerLat, lng - centerLng);
+    if (dist < minDist) { minDist = dist; closest = zone; }
   }
   return closest;
 }
 
-// SVG map zones — redrawn to match 2026 official WPZ map layout
-// Viewbox 0 0 400 480 (portrait, matches real zoo shape)
-// West entrance bottom-left, North at top
-const ZONE_DEFS=[
-  // Living Northwest Trail — large NW section
-  {id:"Living Northwest Trail",  color:"#4a7c3f",
-   d:"M 10,10 L 200,10 L 200,160 L 140,160 L 140,200 L 10,200 Z"},
-  // Temperate Forest / Conservation Aviary — NE section
-  {id:"Temperate Forest",        color:"#6aaa50",
-   d:"M 200,10 L 390,10 L 390,160 L 280,160 L 280,200 L 200,200 Z"},
-  // Forest Trailhead — new 2026 exhibit, W-center
-  {id:"Forest Trailhead",        color:"#2e7d32",
-   d:"M 10,200 L 140,200 L 140,280 L 10,280 Z"},
-  // Tropical Rain Forest — center-west
-  {id:"Tropical Rain Forest",    color:"#388e3c",
-   d:"M 140,160 L 280,160 L 280,310 L 140,310 Z"},
-  // Australasia — center-east
-  {id:"Australasia",             color:"#bf6000",
-   d:"M 280,160 L 390,160 L 390,310 L 280,310 Z"},
-  // Tropical Asia (Trail of Vines + Banyan Wilds + Assam Rhino Reserve) — SW
-  {id:"Tropical Asia",           color:"#7b4f1e",
-   d:"M 10,280 L 200,280 L 200,420 L 10,420 Z"},
-  // African Savanna — SE
-  {id:"African Savanna",         color:"#d4a843",
-   d:"M 200,310 L 390,310 L 390,420 L 200,420 Z"},
-  // Humboldt Penguin — bottom center
-  {id:"Humboldt Penguin",        color:"#1565c0",
-   d:"M 140,310 L 200,310 L 200,420 L 140,420 Z"},
-];
-
-// Zone label centers
-const ZONE_LABEL_POS={
-  "Living Northwest Trail":  {x:105,y:105},
-  "Temperate Forest":        {x:295,y:85},
-  "Forest Trailhead":        {x:75,y:240},
-  "Tropical Rain Forest":    {x:210,y:235},
-  "Australasia":             {x:335,y:235},
-  "Tropical Asia":           {x:105,y:350},
-  "African Savanna":         {x:295,y:365},
-  "Humboldt Penguin":        {x:170,y:365},
-};
-
-// Key landmarks from the official map to render as icons
-const LANDMARKS=[
-  {label:"West\nEntrance", x:75,  y:440, icon:"🚪"},
-  {label:"South\nEntrance",x:295, y:455, icon:"🚪"},
-  {label:"Zoomazium",      x:75,  y:185, icon:"🏠"},
-  {label:"ZooStore",       x:310, y:425, icon:"🛍️"},
-];
-
-function hitZoneSvg(rx,ry,W,H){
-  // rx,ry are 0-1 fractions of the SVG viewbox
-  const px=rx*400, py=ry*480;
-  // Check each zone polygon
-  for(const z of ZONE_DEFS){
-    // Simple bbox check from the path d
-    const nums=z.d.match(/-?\d+\.?\d*/g).map(Number);
-    const xs=nums.filter((_,i)=>i%2===0);
-    const ys=nums.filter((_,i)=>i%2!==0);
-    const xMin=Math.min(...xs),xMax=Math.max(...xs);
-    const yMin=Math.min(...ys),yMax=Math.max(...ys);
-    if(px>=xMin&&px<=xMax&&py>=yMin&&py<=yMax)return z.id;
-  }
-  return null;
-}
-
-const LOGO_URL="https://seeklogo.com/images/W/woodland-park-zoo-logo-63DB8AB91E-seeklogo.com.png";
-
-function Logo({small}){
-  const s=small?36:56;
-  return(
-    <img src={LOGO_URL} alt="Woodland Park Zoo" width={s} height={s}
-      style={{objectFit:"contain",borderRadius:4}}
-      onError={e=>{e.target.style.display="none";}}/>
-  );
-}
-
 const INITIAL_ANIMALS=[
-  // African Savanna
-  {id:1, name:"Zuri",   species:"Plains Zebra",            gender:"Female",birthdate:"2015-03-12",zone:"African Savanna",       blog:null,wiki:"https://en.wikipedia.org/wiki/Plains_zebra"},
-  {id:2, name:"Kibo",   species:"Plains Zebra",            gender:"Male",  birthdate:"2013-07-04",zone:"African Savanna",       blog:null,wiki:"https://en.wikipedia.org/wiki/Plains_zebra"},
-  {id:3, name:"Jabari", species:"Masai Giraffe",           gender:"Male",  birthdate:"2010-11-20",zone:"African Savanna",       blog:null,wiki:"https://en.wikipedia.org/wiki/Masai_giraffe"},
-  {id:4, name:"Amara",  species:"Hippopotamus",            gender:"Female",birthdate:"2008-05-15",zone:"African Savanna",       blog:null,wiki:"https://en.wikipedia.org/wiki/Common_hippopotamus"},
-  {id:5, name:"Simba",  species:"African Lion",            gender:"Male",  birthdate:"2016-01-30",zone:"African Savanna",       blog:null,wiki:"https://en.wikipedia.org/wiki/Lion"},
-  {id:6, name:"Nala",   species:"African Lion",            gender:"Female",birthdate:"2016-02-14",zone:"African Savanna",       blog:null,wiki:"https://en.wikipedia.org/wiki/Lion"},
-  {id:7, name:"Zara",   species:"Ostrich",                 gender:"Female",birthdate:"2017-04-01",zone:"African Savanna",       blog:null,wiki:"https://en.wikipedia.org/wiki/Common_ostrich"},
-  {id:8, name:"Peri",   species:"African Crested Porcupine",gender:"Female",birthdate:"2019-06-10",zone:"African Savanna",     blog:null,wiki:"https://en.wikipedia.org/wiki/Crested_porcupine"},
-  // Tropical Rain Forest
-  {id:9, name:"Nadiri", species:"Western Lowland Gorilla", gender:"Female",birthdate:"2001-08-22",zone:"Tropical Rain Forest",  blog:"https://blog.zoo.org/2020/10/a-baby-gorilla-is-on-way-nadiri-is.html",wiki:"https://en.wikipedia.org/wiki/Western_lowland_gorilla"},
-  {id:10,name:"Jamani", species:"Western Lowland Gorilla", gender:"Female",birthdate:"2005-04-10",zone:"Tropical Rain Forest",  blog:"https://blog.zoo.org/2026/04/what-to-expect-when-expecting-with.html",wiki:"https://en.wikipedia.org/wiki/Western_lowland_gorilla"},
-  {id:11,name:"Olympia",species:"Western Lowland Gorilla", gender:"Female",birthdate:"2003-09-18",zone:"Tropical Rain Forest",  blog:"https://blog.zoo.org/2026/04/what-to-expect-when-expecting-with.html",wiki:"https://en.wikipedia.org/wiki/Western_lowland_gorilla"},
-  {id:12,name:"Leo",    species:"Jaguar",                  gender:"Male",  birthdate:"2014-06-05",zone:"Tropical Rain Forest",  blog:null,wiki:"https://en.wikipedia.org/wiki/Jaguar"},
-  {id:13,name:"Coco",   species:"Ring-tailed Lemur",       gender:"Female",birthdate:"2018-03-01",zone:"Tropical Rain Forest",  blog:null,wiki:"https://en.wikipedia.org/wiki/Ring-tailed_lemur"},
-  {id:14,name:"Remy",   species:"Red Ruffed Lemur",        gender:"Male",  birthdate:"2017-05-19",zone:"Tropical Rain Forest",  blog:null,wiki:"https://en.wikipedia.org/wiki/Red_ruffed_lemur"},
-  {id:15,name:"Kesi",   species:"Colobus Monkey",          gender:"Female",birthdate:"2019-02-28",zone:"Tropical Rain Forest",  blog:null,wiki:"https://en.wikipedia.org/wiki/Colobus"},
-  {id:16,name:"Patas",  species:"Patas Monkey",            gender:"Male",  birthdate:"2018-07-14",zone:"Tropical Rain Forest",  blog:null,wiki:"https://en.wikipedia.org/wiki/Patas_monkey"},
-  // Tropical Asia
-  {id:17,name:"Glenn",  species:"Indian Rhinoceros",       gender:"Male",  birthdate:"2016-11-11",zone:"Tropical Asia",         blog:"https://blog.zoo.org/2023/11/rhino-taj-to-move-to-el-paso-zoo.html",wiki:"https://en.wikipedia.org/wiki/Indian_rhinoceros"},
-  {id:18,name:"Satu",   species:"Malayan Tiger",           gender:"Male",  birthdate:"2012-09-14",zone:"Tropical Asia",         blog:null,wiki:"https://en.wikipedia.org/wiki/Malayan_tiger"},
-  {id:19,name:"Damai",  species:"Malayan Tiger",           gender:"Female",birthdate:"2013-11-07",zone:"Tropical Asia",         blog:null,wiki:"https://en.wikipedia.org/wiki/Malayan_tiger"},
-  {id:20,name:"Kavi",   species:"Sloth Bear",              gender:"Male",  birthdate:"2011-04-17",zone:"Tropical Asia",         blog:null,wiki:"https://en.wikipedia.org/wiki/Sloth_bear"},
-  {id:21,name:"Luna",   species:"Malayan Tapir",           gender:"Female",birthdate:"2015-08-03",zone:"Tropical Asia",         blog:null,wiki:"https://en.wikipedia.org/wiki/Malayan_tapir"},
-  {id:22,name:"Kira",   species:"Bornean Orangutan",       gender:"Female",birthdate:"2009-07-22",zone:"Tropical Asia",         blog:null,wiki:"https://en.wikipedia.org/wiki/Bornean_orangutan"},
-  {id:23,name:"Pearl",  species:"Asian Small-clawed Otter",gender:"Female",birthdate:"2020-01-11",zone:"Tropical Asia",         blog:null,wiki:"https://en.wikipedia.org/wiki/Asian_small-clawed_otter"},
-  {id:24,name:"Miki",   species:"Siamang",                 gender:"Male",  birthdate:"2013-03-22",zone:"Tropical Asia",         blog:null,wiki:"https://en.wikipedia.org/wiki/Siamang"},
-  {id:25,name:"Spot",   species:"Snow Leopard",            gender:"Female",birthdate:"2016-05-30",zone:"Tropical Asia",         blog:null,wiki:"https://en.wikipedia.org/wiki/Snow_leopard"},
-  // Living Northwest Trail
-  {id:26,name:"Juniper",species:"Brown Bear",              gender:"Female",birthdate:"2018-01-15",zone:"Living Northwest Trail",blog:null,wiki:"https://en.wikipedia.org/wiki/Brown_bear"},
-  {id:27,name:"Cedar",  species:"Brown Bear",              gender:"Male",  birthdate:"2017-12-28",zone:"Living Northwest Trail",blog:null,wiki:"https://en.wikipedia.org/wiki/Brown_bear"},
-  {id:28,name:"Bolt",   species:"Mexican Gray Wolf",       gender:"Male",  birthdate:"2016-04-22",zone:"Living Northwest Trail",blog:null,wiki:"https://en.wikipedia.org/wiki/Mexican_wolf"},
-  {id:29,name:"Storm",  species:"Mexican Gray Wolf",       gender:"Female",birthdate:"2016-04-22",zone:"Living Northwest Trail",blog:null,wiki:"https://en.wikipedia.org/wiki/Mexican_wolf"},
-  {id:30,name:"Rocky",  species:"North American River Otter",gender:"Male",birthdate:"2019-03-09",zone:"Living Northwest Trail",blog:null,wiki:"https://en.wikipedia.org/wiki/North_American_river_otter"},
-  {id:31,name:"Denali", species:"Roosevelt Elk",           gender:"Male",  birthdate:"2014-06-30",zone:"Living Northwest Trail",blog:null,wiki:"https://en.wikipedia.org/wiki/Roosevelt_elk"},
-  {id:32,name:"Summit", species:"Mountain Goat",           gender:"Female",birthdate:"2017-05-10",zone:"Living Northwest Trail",blog:null,wiki:"https://en.wikipedia.org/wiki/Mountain_goat"},
-  {id:33,name:"Talon",  species:"Canada Lynx",             gender:"Male",  birthdate:"2020-02-14",zone:"Living Northwest Trail",blog:null,wiki:"https://en.wikipedia.org/wiki/Canada_lynx"},
-  // Temperate Forest
-  {id:34,name:"Bamboo", species:"Red Panda",               gender:"Male",  birthdate:"2020-06-14",zone:"Temperate Forest",      blog:"https://blog.zoo.org/2026/04/carson-red-panda-moves-into-his-new.html",wiki:"https://en.wikipedia.org/wiki/Red_panda"},
-  {id:35,name:"Ember",  species:"Red Panda",               gender:"Female",birthdate:"2021-07-02",zone:"Temperate Forest",      blog:"https://blog.zoo.org/2020/06/red-panda-twins-born-may-25.html",wiki:"https://en.wikipedia.org/wiki/Red_panda"},
-  {id:36,name:"Pepito", species:"Southern Pudu",           gender:"Male",  birthdate:"2022-04-11",zone:"Temperate Forest",      blog:null,wiki:"https://en.wikipedia.org/wiki/Southern_pud%C3%BA"},
-  {id:37,name:"Rosario",species:"Maned Wolf",              gender:"Female",birthdate:"2018-09-23",zone:"Temperate Forest",      blog:"https://blog.zoo.org/2023/12/welcome-maned-wolves-urso-and-rosario.html",wiki:"https://en.wikipedia.org/wiki/Maned_wolf"},
-  {id:38,name:"Fuego",  species:"Chilean Flamingo",        gender:"Male",  birthdate:"2013-02-14",zone:"Temperate Forest",      blog:null,wiki:"https://en.wikipedia.org/wiki/Chilean_flamingo"},
-  {id:39,name:"Wing",   species:"Hooded Vulture",          gender:"Male",  birthdate:"2015-09-01",zone:"Temperate Forest",      blog:null,wiki:"https://en.wikipedia.org/wiki/Hooded_vulture"},
-  // Humboldt Penguin
-  {id:40,name:"Pebble", species:"Humboldt Penguin",        gender:"Female",birthdate:"2017-10-05",zone:"Humboldt Penguin",      blog:null,wiki:"https://en.wikipedia.org/wiki/Humboldt_penguin"},
-  {id:41,name:"Splash", species:"Humboldt Penguin",        gender:"Male",  birthdate:"2018-11-22",zone:"Humboldt Penguin",      blog:null,wiki:"https://en.wikipedia.org/wiki/Humboldt_penguin"},
-  {id:42,name:"Dory",   species:"Humboldt Penguin",        gender:"Female",birthdate:"2019-09-15",zone:"Humboldt Penguin",      blog:null,wiki:"https://en.wikipedia.org/wiki/Humboldt_penguin"},
-  {id:43,name:"Finn",   species:"Humboldt Penguin",        gender:"Male",  birthdate:"2016-08-30",zone:"Humboldt Penguin",      blog:null,wiki:"https://en.wikipedia.org/wiki/Humboldt_penguin"},
-  // Australasia
-  {id:44,name:"Joey",   species:"Red-necked Wallaby",      gender:"Male",  birthdate:"2021-01-07",zone:"Australasia",           blog:null,wiki:"https://en.wikipedia.org/wiki/Red-necked_wallaby"},
-  {id:45,name:"Koa",    species:"Laughing Kookaburra",     gender:"Female",birthdate:"2019-06-12",zone:"Australasia",           blog:null,wiki:"https://en.wikipedia.org/wiki/Laughing_kookaburra"},
-  {id:46,name:"Banjo",  species:"Emu",                     gender:"Male",  birthdate:"2018-03-29",zone:"Australasia",           blog:null,wiki:"https://en.wikipedia.org/wiki/Emu"},
-  // Forest Trailhead (new 2026)
-  {id:47,name:"Carson", species:"Red Panda",               gender:"Male",  birthdate:"2014-07-01",zone:"Forest Trailhead",      blog:"https://blog.zoo.org/2026/04/carson-red-panda-moves-into-his-new.html",wiki:"https://en.wikipedia.org/wiki/Red_panda"},
-  {id:48,name:"Finni",  species:"Matschie's Tree Kangaroo",gender:"Female",birthdate:"2022-08-15",zone:"Forest Trailhead",      blog:null,wiki:"https://en.wikipedia.org/wiki/Matschie%27s_tree_kangaroo"},
-  {id:49,name:"Kea",    species:"Kea",                     gender:"Unknown",birthdate:"2020-11-03",zone:"Forest Trailhead",     blog:null,wiki:"https://en.wikipedia.org/wiki/Kea"},
+  {id:1,name:"Zuri",species:"Plains Zebra",gender:"Female",birthdate:"2015-03-12",zone:"African Savanna",blog:null,wiki:"https://en.wikipedia.org/wiki/Plains_zebra"},
+  {id:2,name:"Kibo",species:"Plains Zebra",gender:"Male",birthdate:"2013-07-04",zone:"African Savanna",blog:null,wiki:"https://en.wikipedia.org/wiki/Plains_zebra"},
+  {id:3,name:"Jabari",species:"Masai Giraffe",gender:"Male",birthdate:"2010-11-20",zone:"African Savanna",blog:null,wiki:"https://en.wikipedia.org/wiki/Masai_giraffe"},
+  {id:4,name:"Amara",species:"Hippopotamus",gender:"Female",birthdate:"2008-05-15",zone:"African Savanna",blog:null,wiki:"https://en.wikipedia.org/wiki/Common_hippopotamus"},
+  {id:5,name:"Simba",species:"African Lion",gender:"Male",birthdate:"2016-01-30",zone:"African Savanna",blog:null,wiki:"https://en.wikipedia.org/wiki/Lion"},
+  {id:6,name:"Nala",species:"African Lion",gender:"Female",birthdate:"2016-02-14",zone:"African Savanna",blog:null,wiki:"https://en.wikipedia.org/wiki/Lion"},
+  {id:7,name:"Nadiri",species:"Western Lowland Gorilla",gender:"Female",birthdate:"2001-08-22",zone:"Tropical Rainforest",blog:"https://blog.zoo.org/2020/10/a-baby-gorilla-is-on-way-nadiri-is.html",wiki:"https://en.wikipedia.org/wiki/Western_lowland_gorilla"},
+  {id:8,name:"Jamani",species:"Western Lowland Gorilla",gender:"Female",birthdate:"2005-04-10",zone:"Tropical Rainforest",blog:"https://blog.zoo.org/2026/04/what-to-expect-when-expecting-with.html",wiki:"https://en.wikipedia.org/wiki/Western_lowland_gorilla"},
+  {id:9,name:"Olympia",species:"Western Lowland Gorilla",gender:"Female",birthdate:"2003-09-18",zone:"Tropical Rainforest",blog:"https://blog.zoo.org/2026/04/what-to-expect-when-expecting-with.html",wiki:"https://en.wikipedia.org/wiki/Western_lowland_gorilla"},
+  {id:10,name:"Leo",species:"Jaguar",gender:"Male",birthdate:"2014-06-05",zone:"Tropical Rainforest",blog:null,wiki:"https://en.wikipedia.org/wiki/Jaguar"},
+  {id:11,name:"Coco",species:"Ring-tailed Lemur",gender:"Female",birthdate:"2018-03-01",zone:"Tropical Rainforest",blog:null,wiki:"https://en.wikipedia.org/wiki/Ring-tailed_lemur"},
+  {id:12,name:"Remy",species:"Red Ruffed Lemur",gender:"Male",birthdate:"2017-05-19",zone:"Tropical Rainforest",blog:null,wiki:"https://en.wikipedia.org/wiki/Red_ruffed_lemur"},
+  {id:13,name:"Kesi",species:"Colobus Monkey",gender:"Female",birthdate:"2019-02-28",zone:"Tropical Rainforest",blog:null,wiki:"https://en.wikipedia.org/wiki/Colobus"},
+  {id:14,name:"Glenn",species:"Indian Rhinoceros",gender:"Male",birthdate:"2016-11-11",zone:"Tropical Asia",blog:"https://blog.zoo.org/2023/11/rhino-taj-to-move-to-el-paso-zoo.html",wiki:"https://en.wikipedia.org/wiki/Indian_rhinoceros"},
+  {id:15,name:"Satu",species:"Malayan Tiger",gender:"Male",birthdate:"2012-09-14",zone:"Tropical Asia",blog:null,wiki:"https://en.wikipedia.org/wiki/Malayan_tiger"},
+  {id:16,name:"Damai",species:"Malayan Tiger",gender:"Female",birthdate:"2013-11-07",zone:"Tropical Asia",blog:null,wiki:"https://en.wikipedia.org/wiki/Malayan_tiger"},
+  {id:17,name:"Kavi",species:"Sloth Bear",gender:"Male",birthdate:"2011-04-17",zone:"Tropical Asia",blog:null,wiki:"https://en.wikipedia.org/wiki/Sloth_bear"},
+  {id:18,name:"Luna",species:"Malayan Tapir",gender:"Female",birthdate:"2015-08-03",zone:"Tropical Asia",blog:null,wiki:"https://en.wikipedia.org/wiki/Malayan_tapir"},
+  {id:19,name:"Kira",species:"Bornean Orangutan",gender:"Female",birthdate:"2009-07-22",zone:"Tropical Asia",blog:null,wiki:"https://en.wikipedia.org/wiki/Bornean_orangutan"},
+  {id:20,name:"Pearl",species:"Asian Small-clawed Otter",gender:"Female",birthdate:"2020-01-11",zone:"Tropical Asia",blog:null,wiki:"https://en.wikipedia.org/wiki/Asian_small-clawed_otter"},
+  {id:21,name:"Juniper",species:"Grizzly Bear",gender:"Female",birthdate:"2018-01-15",zone:"Living Northwest Trail",blog:null,wiki:"https://en.wikipedia.org/wiki/Grizzly_bear"},
+  {id:22,name:"Cedar",species:"Grizzly Bear",gender:"Male",birthdate:"2017-12-28",zone:"Living Northwest Trail",blog:null,wiki:"https://en.wikipedia.org/wiki/Grizzly_bear"},
+  {id:23,name:"Bolt",species:"Gray Wolf",gender:"Male",birthdate:"2016-04-22",zone:"Living Northwest Trail",blog:null,wiki:"https://en.wikipedia.org/wiki/Wolf"},
+  {id:24,name:"Storm",species:"Gray Wolf",gender:"Female",birthdate:"2016-04-22",zone:"Living Northwest Trail",blog:null,wiki:"https://en.wikipedia.org/wiki/Wolf"},
+  {id:25,name:"Rocky",species:"North American River Otter",gender:"Male",birthdate:"2019-03-09",zone:"Living Northwest Trail",blog:null,wiki:"https://en.wikipedia.org/wiki/North_American_river_otter"},
+  {id:26,name:"Denali",species:"Roosevelt Elk",gender:"Male",birthdate:"2014-06-30",zone:"Living Northwest Trail",blog:null,wiki:"https://en.wikipedia.org/wiki/Roosevelt_elk"},
+  {id:27,name:"Summit",species:"Mountain Goat",gender:"Female",birthdate:"2017-05-10",zone:"Living Northwest Trail",blog:null,wiki:"https://en.wikipedia.org/wiki/Mountain_goat"},
+  {id:28,name:"Bamboo",species:"Red Panda",gender:"Male",birthdate:"2020-06-14",zone:"Temperate Forest",blog:"https://blog.zoo.org/2026/04/carson-red-panda-moves-into-his-new.html",wiki:"https://en.wikipedia.org/wiki/Red_panda"},
+  {id:29,name:"Ember",species:"Red Panda",gender:"Female",birthdate:"2021-07-02",zone:"Temperate Forest",blog:"https://blog.zoo.org/2020/06/red-panda-twins-born-may-25.html",wiki:"https://en.wikipedia.org/wiki/Red_panda"},
+  {id:30,name:"Pepito",species:"Southern Pudu",gender:"Male",birthdate:"2022-04-11",zone:"Temperate Forest",blog:null,wiki:"https://en.wikipedia.org/wiki/Southern_pud%C3%BA"},
+  {id:31,name:"Rosario",species:"Maned Wolf",gender:"Female",birthdate:"2018-09-23",zone:"Temperate Forest",blog:"https://blog.zoo.org/2023/12/welcome-maned-wolves-urso-and-rosario.html",wiki:"https://en.wikipedia.org/wiki/Maned_wolf"},
+  {id:32,name:"Fuego",species:"Chilean Flamingo",gender:"Male",birthdate:"2013-02-14",zone:"Temperate Forest",blog:null,wiki:"https://en.wikipedia.org/wiki/Chilean_flamingo"},
+  {id:33,name:"Pebble",species:"Humboldt Penguin",gender:"Female",birthdate:"2017-10-05",zone:"Humboldt Penguin Exhibit",blog:null,wiki:"https://en.wikipedia.org/wiki/Humboldt_penguin"},
+  {id:34,name:"Splash",species:"Humboldt Penguin",gender:"Male",birthdate:"2018-11-22",zone:"Humboldt Penguin Exhibit",blog:null,wiki:"https://en.wikipedia.org/wiki/Humboldt_penguin"},
+  {id:35,name:"Dory",species:"Humboldt Penguin",gender:"Female",birthdate:"2019-09-15",zone:"Humboldt Penguin Exhibit",blog:null,wiki:"https://en.wikipedia.org/wiki/Humboldt_penguin"},
+  {id:36,name:"Finn",species:"Humboldt Penguin",gender:"Male",birthdate:"2016-08-30",zone:"Humboldt Penguin Exhibit",blog:null,wiki:"https://en.wikipedia.org/wiki/Humboldt_penguin"},
+  {id:37,name:"Komodo",species:"Komodo Dragon",gender:"Male",birthdate:"2011-03-18",zone:"Trail of Adaptations",blog:null,wiki:"https://en.wikipedia.org/wiki/Komodo_dragon"},
+  {id:38,name:"Mira",species:"Meerkat",gender:"Female",birthdate:"2020-05-25",zone:"Trail of Adaptations",blog:null,wiki:"https://en.wikipedia.org/wiki/Meerkat"},
+  {id:39,name:"Scout",species:"Meerkat",gender:"Male",birthdate:"2020-05-25",zone:"Trail of Adaptations",blog:null,wiki:"https://en.wikipedia.org/wiki/Meerkat"},
+  {id:40,name:"Joey",species:"Red-necked Wallaby",gender:"Male",birthdate:"2021-01-07",zone:"Australasia",blog:null,wiki:"https://en.wikipedia.org/wiki/Red-necked_wallaby"},
+  {id:41,name:"Koa",species:"Laughing Kookaburra",gender:"Female",birthdate:"2019-06-12",zone:"Australasia",blog:null,wiki:"https://en.wikipedia.org/wiki/Laughing_kookaburra"},
+  {id:42,name:"Banjo",species:"Emu",gender:"Male",birthdate:"2018-03-29",zone:"Australasia",blog:null,wiki:"https://en.wikipedia.org/wiki/Emu"},
 ];
 
 function dbGet(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch{return null;}}
 function dbSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
 function calcAge(bd){const d=new Date(bd),n=new Date();let y=n.getFullYear()-d.getFullYear();if(n.getMonth()-d.getMonth()<0||(n.getMonth()===d.getMonth()&&n.getDate()<d.getDate()))y--;return y;}
 function fmtDate(d){return new Date(d+"T00:00:00").toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});}
+function hitZone(rx,ry){
+  for(const z of ZONE_PATHS){
+    const pts=z.d.replace(/[MLZ]/g,"").trim().split(/\s+/).filter(Boolean).map(p=>{const[a,b]=p.split(",");return[parseFloat(a),parseFloat(b)];});
+    let inside=false;
+    for(let i=0,j=pts.length-1;i<pts.length;j=i++){const[xi,yi]=pts[i],[xj,yj]=pts[j];if(((yi>ry)!==(yj>ry))&&(rx<(xj-xi)*(ry-yi)/(yj-yi)+xi))inside=!inside;}
+    if(inside)return z.id;
+  }
+  return null;
+}
+
+function Logo({small}){const s=small?32:52;return(
+  <svg width={s} height={s} viewBox="0 0 52 52" fill="none">
+    <circle cx="26" cy="26" r="26" fill={WPZ_GREEN}/>
+    <polygon points="26,6 38,30 14,30" fill="white"/>
+    <rect x="22" y="30" width="8" height="10" fill="white"/>
+    <text x="26" y="48" textAnchor="middle" fontSize="7" fontWeight="bold" fill="white" fontFamily="Arial">WPZ</text>
+  </svg>
+);}
 
 function AnimalCard({a,compact}){
   const[exp,setExp]=useState(false);
   return(
     <div onClick={()=>setExp(e=>!e)} style={{background:"white",borderRadius:14,padding:"12px 14px",marginBottom:10,boxShadow:"0 2px 8px rgba(0,0,0,0.08)",borderLeft:`4px solid ${WPZ_GREEN}`,cursor:"pointer"}}>
       <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
-        <div><div style={{fontWeight:800,fontSize:17,color:"#1b5e20"}}>{a.name}</div><div style={{fontSize:13,color:"#555",marginTop:1}}>{a.species}</div></div>
-        <div style={{fontSize:13,background:WPZ_GREEN,color:"white",borderRadius:12,padding:"3px 9px",flexShrink:0}}>{ZONE_EMOJI[a.zone]}</div>
+        <div>
+          <div style={{fontWeight:800,fontSize:17,color:"#1b5e20"}}>{a.name}</div>
+          <div style={{fontSize:13,color:"#555",marginTop:1}}>{a.species}</div>
+        </div>
+        <div style={{fontSize:11,color:"white",background:WPZ_GREEN,borderRadius:12,padding:"3px 9px",fontWeight:"bold",flexShrink:0}}>{ZONE_EMOJI[a.zone]}</div>
       </div>
       <div style={{display:"flex",gap:12,marginTop:7,fontSize:13,color:"#444",flexWrap:"wrap"}}>
         <span>{a.gender==="Female"?"♀":a.gender==="Male"?"♂":"⚥"} {a.gender}</span>
@@ -252,140 +183,111 @@ function AnimalCard({a,compact}){
   );
 }
 
-// SVG Map drawn to match the 2026 official WPZ map layout
-function ZoneMap({selectedZone,onZoneSelect,gpsCoords}){
-  const VW=400,VH=480;
-  const gpsSvg=gpsCoords?gpsToSvg(gpsCoords.lat,gpsCoords.lng):null;
-
+function ZoneMap({selectedZone,onZoneSelect,pinCoords,gpsCoords}){
+  const W=340,H=300;
+  const gpsSvg = gpsCoords ? gpsToSvg(gpsCoords.lat, gpsCoords.lng) : null;
   return(
-    <div style={{width:"100%",overflowX:"hidden"}}>
-    <svg width="100%" viewBox={`0 0 ${VW} ${VH}`} style={{borderRadius:16,boxShadow:"0 3px 16px rgba(0,0,0,0.18)",display:"block",background:"#c8dfc8"}}>
-      {/* Outer border / park grounds */}
-      <rect x="0" y="0" width={VW} height={VH} rx="16" fill="#c8dfc8"/>
-
-      {/* Zone polygons */}
-      {ZONE_DEFS.map(z=>{
+    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{borderRadius:14,boxShadow:"0 2px 12px rgba(0,0,0,0.15)",display:"block"}}>
+      <rect width={W} height={H} fill="#d8ecd4" rx="14"/>
+      {ZONE_PATHS.map(z=>{
+        const pts=z.d.replace(/[ML]/g,"").trim().split(/\s+Z?\s*/).filter(Boolean).map(p=>{const[a,b]=p.split(",");return`${parseFloat(a)*W},${parseFloat(b)*H}`;}).join(" ");
         const sel=selectedZone===z.id;
-        return(
-          <g key={z.id} onClick={()=>onZoneSelect(z.id===selectedZone?null:z.id)} style={{cursor:"pointer"}}>
-            <path d={z.d} fill={z.color} opacity={sel?1:0.78}
-              stroke={sel?"white":"rgba(255,255,255,0.6)"} strokeWidth={sel?3:1.5} strokeLinejoin="round"/>
-          </g>
-        );
+        return(<g key={z.id} onClick={e=>{e.stopPropagation();onZoneSelect(z.id===selectedZone?null:z.id);}} style={{cursor:"pointer"}}>
+          <polygon points={pts} fill={z.color} opacity={sel?1:0.72} stroke={sel?"#fff":"rgba(255,255,255,0.5)"} strokeWidth={sel?2.5:1}/>
+        </g>);
       })}
-
-      {/* Path lines suggesting walkways */}
-      <g stroke="rgba(255,255,255,0.45)" strokeWidth="2" strokeDasharray="6,4" fill="none">
-        {/* Main loop rough path */}
-        <path d="M 75,420 L 75,200 L 200,200 L 200,160 L 320,160 L 320,310 L 200,310 L 200,420 Z"/>
-      </g>
-
-      {/* Zone labels */}
-      {ZONE_DEFS.map(z=>{
-        const pos=ZONE_LABEL_POS[z.id];
-        const sel=selectedZone===z.id;
-        const words=z.id.split(" ");
-        const lines=[];let cur="";
-        words.forEach(w=>{if((cur+" "+w).trim().length>13&&cur){lines.push(cur.trim());cur=w;}else{cur=(cur+" "+w).trim();}});
+      {ZONE_LABELS.map(z=>{
+        const words=z.id.split(" ");let cur="";const lines=[];
+        words.forEach(w=>{if((cur+" "+w).length>12&&cur){lines.push(cur);cur=w;}else{cur=cur?cur+" "+w:w;}});
         if(cur)lines.push(cur);
-        return(
-          <g key={z.id+"lbl"} onClick={()=>onZoneSelect(z.id===selectedZone?null:z.id)} style={{cursor:"pointer"}}>
-            {/* Label background pill */}
-            <rect x={pos.x-52} y={pos.y-10*(lines.length)-4} width={104} height={lines.length*16+8} rx="6"
-              fill={sel?"rgba(0,0,0,0.45)":"rgba(0,0,0,0.28)"}/>
-            {lines.map((line,i)=>(
-              <text key={i} x={pos.x} y={pos.y+(i-(lines.length-1)/2)*16}
-                textAnchor="middle" dominantBaseline="middle"
-                fontSize={sel?11:10} fontWeight="bold" fill="white"
-                style={{pointerEvents:"none"}}>
-                {ZONE_EMOJI[z.id]} {line}
-              </text>
-            ))}
-          </g>
-        );
+        const sel=selectedZone===z.id;
+        return(<g key={z.id} onClick={()=>onZoneSelect(z.id===selectedZone?null:z.id)} style={{cursor:"pointer"}}>
+          {lines.map((line,i)=>(
+            <text key={i} x={z.x*W} y={z.y*H+(i-(lines.length-1)/2)*11} textAnchor="middle" fontSize={sel?9:8} fontWeight="bold" fill="white" style={{pointerEvents:"none",filter:"drop-shadow(0 1px 1px rgba(0,0,0,0.5))"}}>
+              {line}
+            </text>
+          ))}
+        </g>);
       })}
-
-      {/* Entrances */}
-      <g fontSize="9" fill="#333" textAnchor="middle">
-        <rect x="42" y="428" width="66" height="22" rx="4" fill="white" opacity="0.85"/>
-        <text x="75" y="443" fontWeight="bold">🚪 West Entrance</text>
-        <rect x="252" y="448" width="76" height="22" rx="4" fill="white" opacity="0.85"/>
-        <text x="290" y="463" fontWeight="bold">🚪 South Entrance</text>
-      </g>
-
-      {/* N compass */}
-      <g>
-        <circle cx={VW-24} cy={28} r={18} fill="white" opacity="0.85"/>
-        <text x={VW-24} y={22} textAnchor="middle" fontSize="8" fill="#333">N</text>
-        <text x={VW-24} y={32} textAnchor="middle" fontSize="13">▲</text>
-      </g>
-
-      {/* GPS dot */}
-      {gpsSvg&&(
+      {/* Manual pin */}
+      {pinCoords&&!gpsCoords&&(
         <g style={{pointerEvents:"none"}}>
-          <circle cx={gpsSvg.x*VW} cy={gpsSvg.y*VH} r={18} fill="#1565c0" opacity={0.18}/>
-          <circle cx={gpsSvg.x*VW} cy={gpsSvg.y*VH} r={10} fill="#1565c0" opacity={0.32}/>
-          <circle cx={gpsSvg.x*VW} cy={gpsSvg.y*VH} r={6}  fill="#1976d2" stroke="white" strokeWidth={2.5}/>
-          <rect x={gpsSvg.x*VW-14} y={gpsSvg.y*VH-26} width={28} height={14} rx="4" fill="rgba(21,101,192,0.85)"/>
-          <text x={gpsSvg.x*VW} y={gpsSvg.y*VH-16} textAnchor="middle" fontSize="9" fill="white" fontWeight="bold">You</text>
+          <circle cx={pinCoords.x*W} cy={pinCoords.y*H} r={10} fill="#e53935" stroke="white" strokeWidth={2.5}/>
+          <text x={pinCoords.x*W} y={pinCoords.y*H+4} textAnchor="middle" fontSize="10" fill="white">📍</text>
         </g>
       )}
-
-      {/* Footer note */}
-      <rect x="0" y={VH-20} width={VW} height={20} rx="0" fill="rgba(0,0,0,0.18)"/>
-      <text x={VW/2} y={VH-7} textAnchor="middle" fontSize="9" fill="white">Tap any zone to see nearby animals</text>
+      {/* GPS location dot — blue pulsing dot */}
+      {gpsSvg&&(
+        <g style={{pointerEvents:"none"}}>
+          <circle cx={gpsSvg.x*W} cy={gpsSvg.y*H} r={14} fill="#1565c0" opacity={0.2}/>
+          <circle cx={gpsSvg.x*W} cy={gpsSvg.y*H} r={8}  fill="#1565c0" opacity={0.35}/>
+          <circle cx={gpsSvg.x*W} cy={gpsSvg.y*H} r={5}  fill="#1976d2" stroke="white" strokeWidth={2}/>
+          <text x={gpsSvg.x*W} y={gpsSvg.y*H-16} textAnchor="middle" fontSize="9" fill="#1565c0" fontWeight="bold" style={{filter:"drop-shadow(0 1px 1px white)"}}>You</text>
+        </g>
+      )}
+      <text x={W-14} y={22} fontSize={11} fill="#555" textAnchor="middle">N</text>
+      <text x={W-14} y={14} fontSize={7}  fill="#555" textAnchor="middle">▲</text>
+      <text x={10} y={H-8} fontSize={8} fill="#666">Tap a zone to filter animals</text>
     </svg>
-    </div>
   );
 }
 
-export default function App(){
+function App(){
   const[screen,setScreen]=useState("login");
   const[pw,setPw]=useState("");const[pwErr,setPwErr]=useState("");const[loginMode,setLoginMode]=useState("volunteer");
   const[animals,setAnimals]=useState([]);
   const[activeTab,setActiveTab]=useState("list");
   const[selectedZone,setSelectedZone]=useState(null);
   const[search,setSearch]=useState("");
+  const[pinCoords,setPinCoords]=useState(null);
   const[gpsCoords,setGpsCoords]=useState(null);
-  const[gpsStatus,setGpsStatus]=useState("idle");
+  const[gpsStatus,setGpsStatus]=useState("idle"); // idle | loading | found | error | outside
   const[toast,setToast]=useState("");
   const[editAnimal,setEditAnimal]=useState(null);
   const[form,setForm]=useState({name:"",species:"",gender:"Female",birthdate:"",zone:ZONES[0],blog:"",wiki:""});
   const[adminSearch,setAdminSearch]=useState("");
-  const watchRef=useRef(null);
+  const watchRef = useRef(null);
 
-  useEffect(()=>{const s=dbGet("wpz_animals2");setAnimals(s&&s.length>0?s:INITIAL_ANIMALS);},[]);
-  useEffect(()=>{if(animals.length>0)dbSet("wpz_animals2",animals);},[animals]);
+  useEffect(()=>{
+    const saved=dbGet("wpz_animals");
+    setAnimals(saved&&saved.length>0?saved:INITIAL_ANIMALS);
+  },[]);
+  useEffect(()=>{if(animals.length>0)dbSet("wpz_animals",animals);},[animals]);
+
+  // Clean up GPS watch on unmount
   useEffect(()=>()=>{if(watchRef.current)navigator.geolocation.clearWatch(watchRef.current);},[]);
 
-  function showToast(m){setToast(m);setTimeout(()=>setToast(""),3000);}
-
   function startGPS(){
-    if(!navigator.geolocation){showToast("GPS not supported on this device.");return;}
+    if(!navigator.geolocation){setGpsStatus("error");showToast("GPS not supported on this device.");return;}
     setGpsStatus("loading");
-    watchRef.current=navigator.geolocation.watchPosition(
+    watchRef.current = navigator.geolocation.watchPosition(
       pos=>{
         const{latitude:lat,longitude:lng}=pos.coords;
         setGpsCoords({lat,lng});
         const zone=gpsToZone(lat,lng);
         setGpsStatus("found");
-        if(zone){setSelectedZone(zone);}
+        if(zone){setSelectedZone(zone);setActiveTab("list");}
         else setGpsStatus("outside");
       },
-      ()=>{setGpsStatus("error");showToast("Couldn't get location. Enable location services and try again.");},
-      {enableHighAccuracy:true,maximumAge:5000,timeout:12000}
+      ()=>{setGpsStatus("error");showToast("Couldn't get your location. Make sure location is enabled.");},
+      {enableHighAccuracy:true,maximumAge:5000,timeout:10000}
     );
   }
+
   function stopGPS(){
     if(watchRef.current){navigator.geolocation.clearWatch(watchRef.current);watchRef.current=null;}
     setGpsCoords(null);setGpsStatus("idle");
   }
+
+  function showToast(m){setToast(m);setTimeout(()=>setToast(""),3000);}
   function handleLogin(){
     if(loginMode==="volunteer"&&pw===VOLUNTEER_PASSWORD){setScreen("volunteer");setPwErr("");setPw("");}
     else if(loginMode==="admin"&&pw===ADMIN_PASSWORD){setScreen("admin");setPwErr("");setPw("");}
     else setPwErr("Incorrect password. Please try again.");
   }
-  function handleLogout(){stopGPS();setScreen("login");setSelectedZone(null);setSearch("");}
+  function handleLogout(){
+    stopGPS();setScreen("login");setSelectedZone(null);setSearch("");setPinCoords(null);
+  }
 
   const volAnimals=animals.filter(a=>{
     const inZone=!selectedZone||a.zone===selectedZone;
@@ -402,29 +304,39 @@ export default function App(){
   function saveAnimal(){
     if(!form.name||!form.species||!form.birthdate)return;
     const entry={...form,blog:form.blog||null,wiki:form.wiki||null};
-    if(editAnimal){setAnimals(p=>p.map(a=>a.id===editAnimal.id?{...a,...entry}:a));showToast("Animal updated!");}
-    else{setAnimals(p=>[...p,{id:Math.max(...p.map(a=>a.id))+1,...entry}]);showToast("Animal added!");}
+    if(editAnimal){setAnimals(prev=>prev.map(a=>a.id===editAnimal.id?{...a,...entry}:a));showToast("Animal updated!");}
+    else{setAnimals(prev=>[...prev,{id:Math.max(...prev.map(a=>a.id))+1,...entry}]);showToast("Animal added!");}
     setScreen("admin");
   }
-  function deleteAnimal(id){setAnimals(p=>p.filter(a=>a.id!==id));showToast("Animal removed.");}
+  function deleteAnimal(id){setAnimals(prev=>prev.filter(a=>a.id!==id));showToast("Animal removed.");}
 
   const inp={width:"100%",padding:"10px 12px",borderRadius:8,border:"1.5px solid #c8e6c9",fontSize:15,boxSizing:"border-box",fontFamily:"inherit",outline:"none",marginBottom:10,background:"white"};
   const btnG={background:WPZ_GREEN,color:"white",border:"none",borderRadius:8,padding:"12px 0",fontSize:15,fontWeight:"bold",cursor:"pointer",width:"100%"};
   const btnO={background:"white",color:WPZ_GREEN,border:`2px solid ${WPZ_GREEN}`,borderRadius:8,padding:"10px 0",fontSize:14,fontWeight:"bold",cursor:"pointer",width:"100%",marginTop:8};
 
-  const GpsButton=()=>{
-    if(gpsStatus==="loading")return(<button disabled style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,background:"#90a4ae",color:"white",border:"none",borderRadius:10,padding:"11px 0",fontSize:14,fontWeight:"bold",width:"100%",marginBottom:12}}>⏳ Getting location...</button>);
-    if(gpsStatus==="found")return(<button onClick={stopGPS} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,background:"#1565c0",color:"white",border:"none",borderRadius:10,padding:"11px 0",fontSize:14,fontWeight:"bold",cursor:"pointer",width:"100%",marginBottom:12}}>🔵 Tracking — Tap to Stop</button>);
-    return(<button onClick={startGPS} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,background:"#1565c0",color:"white",border:"none",borderRadius:10,padding:"11px 0",fontSize:14,fontWeight:"bold",cursor:"pointer",width:"100%",marginBottom:12}}>📍 Find My Location</button>);
+  const gpsBtn = ()=>{
+    if(gpsStatus==="idle"||gpsStatus==="error"||gpsStatus==="outside") return (
+      <button onClick={startGPS} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,background:"#1565c0",color:"white",border:"none",borderRadius:10,padding:"10px 0",fontSize:14,fontWeight:"bold",cursor:"pointer",width:"100%",marginBottom:10}}>
+        📍 Find My Location
+      </button>
+    );
+    if(gpsStatus==="loading") return (
+      <button disabled style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,background:"#90a4ae",color:"white",border:"none",borderRadius:10,padding:"10px 0",fontSize:14,fontWeight:"bold",width:"100%",marginBottom:10}}>
+        ⏳ Getting location...
+      </button>
+    );
+    if(gpsStatus==="found") return (
+      <button onClick={stopGPS} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,background:"#1b5e20",color:"white",border:"none",borderRadius:10,padding:"10px 0",fontSize:14,fontWeight:"bold",cursor:"pointer",width:"100%",marginBottom:10}}>
+        🔵 Tracking Location — Tap to Stop
+      </button>
+    );
   };
 
   if(screen==="login")return(
     <div style={{minHeight:"100vh",background:WPZ_GREEN,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
-      <div style={{background:"white",borderRadius:20,padding:"32px 28px",maxWidth:360,width:"100%",textAlign:"center",boxShadow:"0 8px 32px rgba(0,0,0,0.2)"}}>
-        <div style={{display:"flex",justifyContent:"center",marginBottom:14}}>
-          <img src={LOGO_URL} alt="Woodland Park Zoo" style={{height:80,objectFit:"contain"}} onError={e=>e.target.style.display="none"}/>
-        </div>
-        <div style={{fontWeight:900,fontSize:20,color:WPZ_GREEN,marginBottom:4}}>Woodland Park Zoo</div>
+      <div style={{background:"white",borderRadius:20,padding:"32px 28px",maxWidth:360,width:"100%",textAlign:"center",boxShadow:"0 8px 32px rgba(0,0,0,0.18)"}}>
+        <div style={{display:"flex",justifyContent:"center",marginBottom:12}}><Logo/></div>
+        <div style={{fontWeight:900,fontSize:22,color:WPZ_GREEN}}>Woodland Park Zoo</div>
         <div style={{fontSize:13,color:"#666",marginBottom:20}}>Volunteer Animal Directory</div>
         <div style={{display:"flex",marginBottom:16,borderRadius:8,overflow:"hidden",border:`1.5px solid ${WPZ_GREEN}`}}>
           {["volunteer","admin"].map(m=>(
@@ -443,10 +355,9 @@ export default function App(){
 
   if(screen==="volunteer")return(
     <div style={{minHeight:"100vh",background:"#f4faf4"}}>
-      {toast&&<div style={{position:"fixed",top:16,left:"50%",transform:"translateX(-50%)",background:"#333",color:"white",padding:"10px 22px",borderRadius:20,zIndex:999,fontWeight:"bold",fontSize:14,whiteSpace:"nowrap"}}>{toast}</div>}
-      <div style={{background:WPZ_GREEN,padding:"12px 16px",display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,zIndex:10}}>
-        <img src={LOGO_URL} alt="WPZ" style={{height:36,objectFit:"contain"}} onError={e=>e.target.style.display="none"}/>
-        <div style={{flex:1}}><div style={{color:"white",fontWeight:800,fontSize:15}}>WPZ Animal Directory</div><div style={{color:"#a5d6a7",fontSize:11}}>Volunteer Access</div></div>
+      {toast&&<div style={{position:"fixed",top:16,left:"50%",transform:"translateX(-50%)",background:"#333",color:"white",padding:"10px 24px",borderRadius:20,zIndex:999,fontWeight:"bold",fontSize:14,whiteSpace:"nowrap"}}>{toast}</div>}
+      <div style={{background:WPZ_GREEN,padding:"14px 16px",display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,zIndex:10}}>
+        <Logo small/><div style={{flex:1}}><div style={{color:"white",fontWeight:800,fontSize:16}}>WPZ Animal Directory</div><div style={{color:"#a5d6a7",fontSize:11}}>Volunteer Access</div></div>
         <button onClick={handleLogout} style={{background:"rgba(255,255,255,0.15)",border:"none",color:"white",borderRadius:8,padding:"6px 12px",fontSize:12,cursor:"pointer"}}>Sign Out</button>
       </div>
       <div style={{display:"flex",background:"white",borderBottom:"2px solid #e0e0e0"}}>
@@ -457,44 +368,37 @@ export default function App(){
 
       {activeTab==="map"&&(
         <div style={{padding:"14px 16px 80px"}}>
-          <GpsButton/>
+          {gpsBtn()}
+          {gpsStatus==="outside"&&<div style={{fontSize:13,color:"#e65100",marginBottom:10,textAlign:"center",background:"#fff3e0",borderRadius:8,padding:"8px"}}>📍 Your location appears to be outside the zoo</div>}
           {gpsStatus==="found"&&selectedZone&&<div style={{fontSize:13,color:"#1b5e20",marginBottom:10,textAlign:"center",background:"#e8f5e9",borderRadius:8,padding:"8px"}}>🔵 You are in: <strong>{selectedZone}</strong></div>}
-          {gpsStatus==="outside"&&<div style={{fontSize:13,color:"#bf360c",marginBottom:10,textAlign:"center",background:"#fbe9e7",borderRadius:8,padding:"8px"}}>📍 Your location appears to be outside the zoo</div>}
-          <ZoneMap selectedZone={selectedZone} onZoneSelect={z=>{setSelectedZone(z);}} gpsCoords={gpsCoords}/>
-          {selectedZone&&(
-            <div style={{marginTop:14}}>
-              <div style={{fontWeight:800,fontSize:16,color:WPZ_GREEN,marginBottom:6}}>{ZONE_EMOJI[selectedZone]} {selectedZone}</div>
-              <div style={{fontSize:13,color:"#666",marginBottom:10}}>{volAnimals.length} animal{volAnimals.length!==1?"s":""} — tap a card for links</div>
-              {volAnimals.map(a=><AnimalCard key={a.id} a={a} compact/>)}
-              <button onClick={()=>{setSelectedZone(null);if(gpsStatus==="found")stopGPS();}} style={{...btnO,marginTop:4}}>Clear Selection</button>
-            </div>
-          )}
-          {!selectedZone&&(
-            <div style={{marginTop:12}}>
-              <div style={{fontSize:13,color:"#888",marginBottom:8,textAlign:"center"}}>Or tap a zone below</div>
-              {ZONES.map(z=>{const cnt=animals.filter(a=>a.zone===z).length;const zd=ZONE_DEFS.find(p=>p.id===z);return(
-                <div key={z} onClick={()=>setSelectedZone(z)} style={{display:"flex",alignItems:"center",gap:10,background:"white",borderRadius:10,padding:"10px 14px",marginBottom:8,cursor:"pointer",boxShadow:"0 1px 4px rgba(0,0,0,0.07)"}}>
-                  <div style={{width:16,height:16,borderRadius:4,background:zd?.color,flexShrink:0}}/>
-                  <div style={{flex:1,fontWeight:600,fontSize:14}}>{ZONE_EMOJI[z]} {z}</div>
-                  <div style={{fontSize:13,color:"#888"}}>{cnt} animals</div>
-                </div>
-              );})}
-            </div>
-          )}
+          <ZoneMap selectedZone={selectedZone} onZoneSelect={z=>{setSelectedZone(z);setPinCoords(null);}} pinCoords={pinCoords} gpsCoords={gpsCoords}/>
+          {selectedZone&&(<div style={{marginTop:12}}>
+            <div style={{fontWeight:800,fontSize:16,color:WPZ_GREEN,marginBottom:8}}>{ZONE_EMOJI[selectedZone]} {selectedZone}</div>
+            <div style={{fontSize:13,color:"#666",marginBottom:10}}>{volAnimals.length} animal{volAnimals.length!==1?"s":""} — tap for links</div>
+            {volAnimals.map(a=><AnimalCard key={a.id} a={a} compact/>)}
+            <button onClick={()=>{setSelectedZone(null);setPinCoords(null);if(gpsStatus==="found")stopGPS();}} style={{...btnO,marginTop:4,fontSize:13}}>Clear</button>
+          </div>)}
+          {!selectedZone&&(<div style={{marginTop:12}}>
+            {ZONES.map(z=>{const cnt=animals.filter(a=>a.zone===z).length;const zp=ZONE_PATHS.find(p=>p.id===z);return(
+              <div key={z} onClick={()=>setSelectedZone(z)} style={{display:"flex",alignItems:"center",gap:10,background:"white",borderRadius:10,padding:"10px 14px",marginBottom:8,cursor:"pointer",boxShadow:"0 1px 4px rgba(0,0,0,0.07)"}}>
+                <div style={{width:16,height:16,borderRadius:4,background:zp?.color,flexShrink:0}}/><div style={{flex:1,fontWeight:600,fontSize:14}}>{ZONE_EMOJI[z]} {z}</div><div style={{fontSize:13,color:"#888"}}>{cnt} animals</div>
+              </div>
+            );})}
+          </div>)}
         </div>
       )}
 
       {activeTab==="list"&&(
         <div style={{padding:"14px 16px 80px"}}>
-          <GpsButton/>
-          {gpsStatus==="found"&&selectedZone&&<div style={{fontSize:13,color:"#1b5e20",marginBottom:10,textAlign:"center",background:"#e8f5e9",borderRadius:8,padding:"8px"}}>🔵 Nearest zone: <strong>{selectedZone}</strong></div>}
-          <input placeholder="🔍 Search by name or species..." value={search} onChange={e=>{setSearch(e.target.value);setSelectedZone(null);}} style={{...inp,border:"1.5px solid #c8e6c9"}}/>
-          <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:8,marginBottom:8}}>
+          {gpsBtn()}
+          {gpsStatus==="found"&&selectedZone&&<div style={{fontSize:13,color:"#1b5e20",marginBottom:10,textAlign:"center",background:"#e8f5e9",borderRadius:8,padding:"8px"}}>🔵 Showing animals near you: <strong>{selectedZone}</strong></div>}
+          <input placeholder="🔍 Search by name or species..." value={search} onChange={e=>{setSearch(e.target.value);setSelectedZone(null);}} style={{...inp,marginBottom:12,border:"1.5px solid #c8e6c9"}}/>
+          <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:8,marginBottom:4}}>
             <button onClick={()=>{setSelectedZone(null);setSearch("");}} style={{flexShrink:0,padding:"7px 14px",borderRadius:20,border:"none",cursor:"pointer",fontSize:12,fontWeight:"bold",background:!selectedZone?WPZ_GREEN:"#e0e0e0",color:!selectedZone?"white":"#555"}}>All</button>
             {ZONES.map(z=>(<button key={z} onClick={()=>{setSelectedZone(z);setSearch("");}} style={{flexShrink:0,padding:"7px 12px",borderRadius:20,border:"none",cursor:"pointer",fontSize:12,fontWeight:"bold",background:selectedZone===z?WPZ_GREEN:"#e0e0e0",color:selectedZone===z?"white":"#555"}}>{ZONE_EMOJI[z]}</button>))}
           </div>
-          {selectedZone&&<div style={{fontSize:13,color:WPZ_GREEN,fontWeight:"bold",marginBottom:8}}>{ZONE_EMOJI[selectedZone]} {selectedZone}</div>}
-          <div style={{fontSize:12,color:"#888",marginBottom:8}}>{volAnimals.length} animal{volAnimals.length!==1?"s":""} — tap any card for links</div>
+          {selectedZone&&<div style={{fontSize:13,color:WPZ_GREEN,fontWeight:"bold",marginBottom:6}}>{ZONE_EMOJI[selectedZone]} {selectedZone}</div>}
+          <div style={{fontSize:12,color:"#888",marginBottom:8}}>{volAnimals.length} animal{volAnimals.length!==1?"s":""} — tap any card to see links</div>
           {volAnimals.length===0&&<div style={{textAlign:"center",color:"#aaa",marginTop:40}}>No animals found.</div>}
           {volAnimals.map(a=><AnimalCard key={a.id} a={a} compact={!!selectedZone}/>)}
         </div>
@@ -505,9 +409,8 @@ export default function App(){
   if(screen==="admin")return(
     <div style={{minHeight:"100vh",background:"#f4faf4"}}>
       {toast&&<div style={{position:"fixed",top:16,left:"50%",transform:"translateX(-50%)",background:"#2e7d32",color:"white",padding:"10px 24px",borderRadius:20,zIndex:999,fontWeight:"bold",fontSize:14}}>{toast}</div>}
-      <div style={{background:"#1b5e20",padding:"12px 16px",display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,zIndex:10}}>
-        <img src={LOGO_URL} alt="WPZ" style={{height:36,objectFit:"contain"}} onError={e=>e.target.style.display="none"}/>
-        <div style={{flex:1}}><div style={{color:"white",fontWeight:800,fontSize:15}}>Admin Panel</div><div style={{color:"#a5d6a7",fontSize:11}}>Animal Management</div></div>
+      <div style={{background:"#1b5e20",padding:"14px 16px",display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,zIndex:10}}>
+        <Logo small/><div style={{flex:1}}><div style={{color:"white",fontWeight:800,fontSize:16}}>Admin Panel</div><div style={{color:"#a5d6a7",fontSize:11}}>Animal Management</div></div>
         <button onClick={handleLogout} style={{background:"rgba(255,255,255,0.15)",border:"none",color:"white",borderRadius:8,padding:"6px 12px",fontSize:12,cursor:"pointer"}}>Sign Out</button>
       </div>
       <div style={{padding:"14px 16px 80px"}}>
@@ -535,13 +438,16 @@ export default function App(){
 
   return(
     <div style={{minHeight:"100vh",background:"#f4faf4"}}>
-      <div style={{background:"#1b5e20",padding:"12px 16px",display:"flex",alignItems:"center",gap:10}}>
+      <div style={{background:"#1b5e20",padding:"14px 16px",display:"flex",alignItems:"center",gap:10}}>
         <button onClick={()=>setScreen("admin")} style={{background:"rgba(255,255,255,0.15)",border:"none",color:"white",borderRadius:8,padding:"6px 10px",fontSize:14,cursor:"pointer"}}>←</button>
         <div style={{color:"white",fontWeight:800,fontSize:16}}>{editAnimal?"Edit Animal":"Add New Animal"}</div>
       </div>
       <div style={{padding:"20px 16px"}}>
         {[["Name","name","Animal name"],["Species","species","e.g. Western Lowland Gorilla"],["Zoo Blog URL","blog","https://blog.zoo.org/..."],["Wikipedia URL","wiki","https://en.wikipedia.org/wiki/..."]].map(([label,field,ph])=>(
-          <div key={field}><label style={{fontSize:13,color:"#555",fontWeight:"bold"}}>{label}</label><input value={form[field]} onChange={e=>setForm(f=>({...f,[field]:e.target.value}))} placeholder={ph} style={inp}/></div>
+          <div key={field}>
+            <label style={{fontSize:13,color:"#555",fontWeight:"bold"}}>{label}</label>
+            <input value={form[field]} onChange={e=>setForm(f=>({...f,[field]:e.target.value}))} placeholder={ph} style={inp}/>
+          </div>
         ))}
         <label style={{fontSize:13,color:"#555",fontWeight:"bold"}}>Gender</label>
         <select value={form.gender} onChange={e=>setForm(f=>({...f,gender:e.target.value}))} style={inp}><option>Female</option><option>Male</option><option>Unknown</option></select>
